@@ -22,7 +22,7 @@ export class UsersService {
         return this.userRepository.findOne({ where: { id }, relations: { sessions: true} });
     }
 
-    async signup(user: Partial<User>, ip: string): Promise<User> {
+    async signup(user: Partial<User>, ip: string, user_agent: string): Promise<User> {
         const sessionId = randomUUID();
         const newuser = this.userRepository.create({
             ...user,
@@ -37,6 +37,8 @@ export class UsersService {
             user_ip: ip,
             createdAt: Date.now().toString(),
             expiresAt: Date.now().toString(),
+            user_agent,
+            valid: true,
             user: response
         };
         const saveSession = await this.createSession(newSession);
@@ -44,12 +46,30 @@ export class UsersService {
         return response;
     }
 
-    async login(user: Partial<User>, ip: string, sessionId?: string) {
-        const session = await this.sessionRepository.findOne({
-            where: {session_id: sessionId}
-        });
-        if (Date.now() > Number(session.expiresAt))
-            return false;
+    async login(user: Partial<User>, ip: string, user_agent: string, sessionId?: string) {
+        const userData = await this.userRepository.findOne({where: {mobile: user.mobile}});
+        let session: Session;
+        if (sessionId) {
+            session = await this.sessionRepository.findOne({
+                where: {session_id: sessionId}
+            });
+            if (Date.now() > Number(session.expiresAt))
+                return false;
+        }
+        const newSessionId = randomUUID();
+        session = {
+            session_id: newSessionId,
+            user_ip: ip,
+            createdAt: Date.now().toString(),
+            expiresAt: Date.now().toString(),
+            user_agent,
+            valid: true,
+            user: userData
+        }
+        // invalidate the previous active session
+        await this.sessionRepository.save(session);
+        const updateUser = await this.update(userData.id, {activeSession: newSessionId});
+        const updatePreviousSession = await this.sessionRepository.update(updateUser.activeSession, {valid: false});
         return true;
     }
 

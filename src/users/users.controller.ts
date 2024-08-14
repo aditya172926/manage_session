@@ -26,15 +26,23 @@ export class UsersController {
         @Req() req: Request,
         @Body() user: User,
     ): Promise<User> {
-        const createdUser = await this.usersService.signup(user, req.ip);
+        const createdUser = await this.usersService.signup(
+            user, 
+            req.ip,
+            req.headers['user-agent']
+        );
         return createdUser;
     }
 
     // @UseGuards(AuthGuard)
-    // @Post('login')
-    // async login() {
-
-    // }
+    @Post('login')
+    async login(
+        @Req() req: Request,
+        @Body() user: User,
+    ): Promise<boolean> {
+        const newSession = await this.usersService.login(user, req.ip, req.headers['user-agent']);
+        return newSession;
+    }
 
     @Put(':id')
     async update(@Param('id') id: string, @Body() user: User): Promise<any> {
