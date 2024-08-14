@@ -7,12 +7,4 @@ export class AppService {
     return 'Hello Worlds!';
   }
 
-  async test(): Promise<string> {
-    return "whatsup"
-  }
-
-  private generateSessionKey(): string {
-    return "";
-  }
-
 }
