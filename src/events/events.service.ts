@@ -7,7 +7,7 @@ export class EventsService {
         private eventsGateway: EventsGateway
     ) {}
 
-    sendMessage(userTopic: string, sessionId: string) {
-        this.eventsGateway.server.emit(`${userTopic}`, {sessionId: sessionId}, (data) => console.log(data))
+    sendMessage(userTopic: string) {
+        this.eventsGateway.server.emit(`${userTopic}`, {valid: false}, (data) => console.log(data))
     }
 }

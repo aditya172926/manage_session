@@ -52,6 +52,7 @@ export class UsersService {
     async login(user: Partial<User>, ip: string, user_agent: string) {
         try {
             let userData = await this.userRepository.findOne({ where: { mobile: user.mobile } });
+            const oldSessionId = userData?.activeSession;
             const newSessionId = randomUUID();
             if (userData) {
                 const updateUser = await this.update(userData.id, { activeSession: newSessionId });
@@ -75,11 +76,8 @@ export class UsersService {
             }
             await this.sessionRepository.save(session);
             
-            this.eventsService.sendMessage(userData.mobile, newSessionId);
-            /**
-             *TODO Check if the returned sessionId matches the localstorage sessionId.
-             * If not, logout in the UI
-             */
+            if (oldSessionId)
+                this.eventsService.sendMessage(oldSessionId);
             return newSessionId;
         } catch (error: any) {
             console.log(error);
