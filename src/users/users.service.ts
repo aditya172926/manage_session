@@ -4,6 +4,8 @@ import { User } from '../models/users.entity';
 import { Repository } from 'typeorm';
 import { Session } from '../models/sessions.entity';
 import { randomUUID } from 'crypto';
+import { EventsGateway } from '../events/events.gateway';
+import { EventsService } from 'src/events/events.service';
 
 @Injectable()
 export class UsersService {
@@ -11,7 +13,8 @@ export class UsersService {
         @InjectRepository(User)
         private userRepository: Repository<User>,
         @InjectRepository(Session)
-        private sessionRepository: Repository<Session>
+        private sessionRepository: Repository<Session>,
+        private eventsService: EventsService
     ) { }
 
     async findAll(): Promise<User[]> {
@@ -19,7 +22,7 @@ export class UsersService {
     }
 
     async findOne(id: string): Promise<User> {
-        return this.userRepository.findOne({ where: { id }, relations: { sessions: true} });
+        return this.userRepository.findOne({ where: { id }, relations: { sessions: true } });
     }
 
     async signup(user: Partial<User>, ip: string, user_agent: string): Promise<User> {
@@ -46,31 +49,42 @@ export class UsersService {
         return response;
     }
 
-    async login(user: Partial<User>, ip: string, user_agent: string, sessionId?: string) {
-        const userData = await this.userRepository.findOne({where: {mobile: user.mobile}});
-        let session: Session;
-        if (sessionId) {
-            session = await this.sessionRepository.findOne({
-                where: {session_id: sessionId}
-            });
-            if (Date.now() > Number(session.expiresAt))
-                return false;
+    async login(user: Partial<User>, ip: string, user_agent: string) {
+        try {
+            let userData = await this.userRepository.findOne({ where: { mobile: user.mobile } });
+            const newSessionId = randomUUID();
+            if (userData) {
+                const updateUser = await this.update(userData.id, { activeSession: newSessionId });
+                const updatePreviousSession = await this.sessionRepository.update(userData.activeSession, { valid: false });
+            } else {
+                const newuser = this.userRepository.create({
+                    ...user,
+                    activeSession: newSessionId
+                });
+                userData = await this.userRepository.save(newuser);
+            }
+
+            const session = {
+                session_id: newSessionId,
+                user_ip: ip,
+                createdAt: Date.now().toString(),
+                expiresAt: (Date.now() + 10000).toString(),
+                user_agent,
+                valid: true,
+                user: userData
+            }
+            await this.sessionRepository.save(session);
+            
+            this.eventsService.sendMessage(userData.mobile, newSessionId);
+            /**
+             *TODO Check if the returned sessionId matches the localstorage sessionId.
+             * If not, logout in the UI
+             */
+            return newSessionId;
+        } catch (error: any) {
+            console.log(error);
+            throw new Error(JSON.stringify(error));
         }
-        const newSessionId = randomUUID();
-        session = {
-            session_id: newSessionId,
-            user_ip: ip,
-            createdAt: Date.now().toString(),
-            expiresAt: Date.now().toString(),
-            user_agent,
-            valid: true,
-            user: userData
-        }
-        // invalidate the previous active session
-        await this.sessionRepository.save(session);
-        const updateUser = await this.update(userData.id, {activeSession: newSessionId});
-        const updatePreviousSession = await this.sessionRepository.update(updateUser.activeSession, {valid: false});
-        return true;
     }
 
     private async createSession(session: Partial<Session>): Promise<boolean> {
