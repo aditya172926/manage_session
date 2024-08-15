@@ -55,7 +55,7 @@ export class UsersService {
                 this.eventsService.sendMessage(oldSessionId);
             return newSessionId;
         } catch (error: any) {
-            console.log(error);
+            console.log("Error", error);
             throw new Error(JSON.stringify(error));
         }
     }

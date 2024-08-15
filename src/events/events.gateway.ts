@@ -1,10 +1,16 @@
 import { SubscribeMessage, WebSocketGateway, OnGatewayConnection, OnGatewayDisconnect, ConnectedSocket, MessageBody, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { createServer } from 'http';
 
 @WebSocketGateway()
 export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
-
-  @WebSocketServer() server: Server;
+  httpServer = createServer();
+  @WebSocketServer() server: Server = new Server(this.httpServer, {
+    cors: {
+      origin: "http://localhost:3001",
+      methods: ['GET', 'POST']
+    }
+  });
 
   handleConnection(client: any, ...args: any[]) {
     console.log("Client connected ", client.id);
