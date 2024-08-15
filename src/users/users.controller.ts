@@ -19,22 +19,7 @@ export class UsersController {
         return this.usersService.findOne(id.id);
     }
 
-    @UseGuards(AuthGuard)
     @Post()
-    @HttpCode(201)
-    async createUser(
-        @Req() req: Request,
-        @Body() user: User,
-    ): Promise<User> {
-        const createdUser = await this.usersService.signup(
-            user, 
-            req.ip,
-            req.headers['user-agent']
-        );
-        return createdUser;
-    }
-
-    @Post('login')
     async login(
         @Req() req: Request,
         @Res() res: Response,
@@ -42,27 +27,9 @@ export class UsersController {
     ) {
         try {
             const newSession = await this.usersService.login(user, req.ip, req.headers['user-agent']);
-            res.status(200).send(newSession);
+            res.status(HttpStatus.OK).send(newSession);
         } catch (error: any) {
             res.status(HttpStatus.BAD_REQUEST).json({error: error});
         }
-    }
-
-    @Put(':id')
-    async update(@Param('id') id: string, @Body() user: User): Promise<any> {
-        await this.usersService.update(id, user);
-        return { message: 'User updated successfully' };
-    }
-
-    @Delete(':id')
-    async delete(@Param('id') id: string): Promise<any> {
-        const user = await this.usersService.findOne(id);
-
-        if (!user) {
-            throw new NotFoundException('User does not exist!');
-        }
-
-        await this.usersService.delete(id);
-        return { message: 'User deleted successfully' };
     }
 }
