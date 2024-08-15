@@ -20,8 +20,8 @@ export class UsersService {
         return this.userRepository.find();
     }
 
-    async findOne(id: string): Promise<User> {
-        return this.userRepository.findOne({ where: { id }, relations: { sessions: true } });
+    async findOne(mobile: string): Promise<User> {
+        return this.userRepository.findOne({ where: { mobile: mobile }, relations: { sessions: true } });
     }
 
     async login(user: Partial<User>, ip: string, user_agent: string) {

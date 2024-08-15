@@ -14,9 +14,16 @@ export class UsersController {
         return this.usersService.findAll();
     }
 
-    @Get(':id')
-    async findOne(@Param() id: any): Promise<User> {
-        return this.usersService.findOne(id.id);
+    @Get(':data')
+    async findOne(
+        @Res() res: Response,
+        @Param() data: {mobile: string}) {
+        try {
+            const user = await this.usersService.findOne(data.mobile);
+            res.status(HttpStatus.OK).send(JSON.stringify(user));
+        } catch (error: any) {
+            res.status(HttpStatus.BAD_REQUEST).json({error: error});
+        }
     }
 
     @Post()

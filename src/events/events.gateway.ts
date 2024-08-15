@@ -2,15 +2,10 @@ import { SubscribeMessage, WebSocketGateway, OnGatewayConnection, OnGatewayDisco
 import { Server, Socket } from 'socket.io';
 import { createServer } from 'http';
 
-@WebSocketGateway()
+@WebSocketGateway({cors: true})
 export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   httpServer = createServer();
-  @WebSocketServer() server: Server = new Server(this.httpServer, {
-    cors: {
-      origin: "http://localhost:3001",
-      methods: ['GET', 'POST']
-    }
-  });
+  @WebSocketServer() server: Server;
 
   handleConnection(client: any, ...args: any[]) {
     console.log("Client connected ", client.id);
