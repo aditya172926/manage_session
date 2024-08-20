@@ -21,7 +21,7 @@ export class UsersService {
     }
 
     async findOne(mobile: string): Promise<User> {
-        return this.userRepository.findOne({ where: { mobile: mobile }, relations: { sessions: true } });
+        return this.userRepository.findOne({ where: { mobile: '+' + mobile }, relations: { sessions: true } });
     }
 
     async login(user: Partial<User>, ip: string, user_agent: string) {

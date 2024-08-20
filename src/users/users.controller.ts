@@ -14,7 +14,7 @@ export class UsersController {
         return this.usersService.findAll();
     }
 
-    @Get(':data')
+    @Get(':mobile')
     async findOne(
         @Res() res: Response,
         @Param() data: {mobile: string}) {
